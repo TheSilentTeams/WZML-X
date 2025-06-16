@@ -125,13 +125,36 @@ class TelegramUploader:
                     disable_notification=True,
                 )
                 self._sent_msg = self._log_msg
+
+                # 🛠 Fix for user session not being in source chat
                 if self._user_session:
-                    self._sent_msg = await TgClient.user.get_messages(
-                        chat_id=self._sent_msg.chat.id,
-                        message_ids=self._sent_msg.id,
-                    )
+                    try:
+                        # Try to fetch last message from user in log channel
+                        history = await TgClient.user.get_chat_history(
+                            chat_id=self._log_msg.chat.id,
+                            limit=5
+                        )
+                        for m in history:
+                            if m.from_user and m.from_user.id == self._listener.user_id:
+                                self._sent_msg = m
+                                LOGGER.info("[Fallback] Using recent user message from log channel.")
+                                break
+                        else:
+                            # Send fallback message if none found
+                            self._sent_msg = await TgClient.user.send_message(
+                                chat_id=self._log_msg.chat.id,
+                                text="[Auto] Upload task started.",
+                                disable_web_page_preview=True,
+                                disable_notification=True,
+                            )
+                    except Exception as e:
+                        LOGGER.error(f"User session fallback failed: {e}")
+                        await self._listener.on_upload_error("User session: unable to prepare reply message.")
+                        return False
+
                 else:
                     self._is_private = self._sent_msg.chat.type.name == "PRIVATE"
+
             except Exception as e:
                 await self._listener.on_upload_error(str(e))
                 return False
@@ -150,6 +173,7 @@ class TelegramUploader:
         else:
             self._sent_msg = self._listener.message
         return True
+
 
     async def _prepare_file(self, pre_file_, dirpath):
         cap_file_ = file_ = pre_file_
