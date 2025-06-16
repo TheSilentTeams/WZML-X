@@ -129,12 +129,10 @@ class TelegramUploader:
                 # 🛠 Fix for user session not being in source chat
                 if self._user_session:
                     try:
-                        # Try to fetch last message from user in log channel
-                        history = await TgClient.user.get_chat_history(
+                        async for m in TgClient.user.get_chat_history(
                             chat_id=self._log_msg.chat.id,
                             limit=5
-                        )
-                        for m in history:
+                        ):
                             if m.from_user and m.from_user.id == self._listener.user_id:
                                 self._sent_msg = m
                                 LOGGER.info("[Fallback] Using recent user message from log channel.")
@@ -173,7 +171,6 @@ class TelegramUploader:
         else:
             self._sent_msg = self._listener.message
         return True
-
 
     async def _prepare_file(self, pre_file_, dirpath):
         cap_file_ = file_ = pre_file_
