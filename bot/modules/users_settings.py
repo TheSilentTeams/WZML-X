@@ -46,7 +46,13 @@ leech_options = [
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
-ffset_options = ["FFMPEG_CMDS", "METADATA", "AUDIO_METADATA", "VIDEO_METADATA", "SUBTITLE_METADATA"]
+ffset_options = [
+    "FFMPEG_CMDS",
+    "METADATA",
+    "AUDIO_METADATA",
+    "VIDEO_METADATA",
+    "SUBTITLE_METADATA",
+]
 advanced_options = [
     "EXCLUDED_EXTENSIONS",
     "NAME_SWAP",
@@ -180,39 +186,50 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 """,
     ),
     "METADATA": (
-        "Metadata String (key=value|key=value) with Dynamic Variables",
-        "Set default metadata fields with dynamic variables support. Use {filename}, {basename}, {extension}, {audiolang}, {sublang}, {duration}, {resolution}, {codec}, {bitrate}, {year}, {size} for dynamic values. These will be applied to files. Leave empty to disable.",
-        """<i>Send default metadata as key=value pairs separated by pipes with dynamic variables.</i>
+        "🏷 Global Metadata (key=value|key=value)",
+        "Apply metadata to all media files with dynamic variables.",
+        """<i>📝 Send metadata as</i> <code>key=value|key2=value2</code>
 
-<b>Examples:</b>
-<code>title={basename} - {year}|artist=My Channel|comment={codec} {resolution} {audiolang}</code>
+<b>🔧 Dynamic Variables:</b>
+• <code>{filename}</code> - Original filename
+• <code>{basename}</code> - Name without extension
+• <code>{audiolang}</code> - Audio language (English/Hindi etc.)
+• <code>{year}</code> - Year from filename
 
-<code>description=File: {filename} | Size: {size} | Duration: {duration}|album=My Collection</code>
+<b>📋 Example:</b>
+<code>title={basename}|artist={audiolang} Version|year={year}</code>
 
-<code>genre=Entertainment|comment=Uploaded via Bot - {basename}</code>
-
-┖ <b>Time Left :</b> <code>60 sec</code>""",
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "AUDIO_METADATA": (
-        "Audio Metadata String (key=value|key=value) with Dynamic Variables",
-        "Set audio stream metadata fields with dynamic variables. Applied per audio stream with {audiolang} replaced by each stream's language.",
-        """<i>Send audio metadata as key=value pairs separated by pipes. Use \\| to escape pipe characters.</i>
-<b>Example:</b> <code>title={basename} - {audiolang}|artist=MyArtist</code>
-┖ <b>Time Left :</b> <code>60 sec</code>""",
+        "🎵 Audio Stream Metadata",
+        "Metadata applied to each audio track separately.",
+        """<i>🎧 Audio stream metadata with per-track language support</i>
+
+<b>📋 Example:</b>
+<code>language={audiolang}|title=Audio - {audiolang}</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "VIDEO_METADATA": (
-        "Video Metadata String (key=value|key=value) with Dynamic Variables",
-        "Set video stream metadata fields with dynamic variables. Applied to video streams.",
-        """<i>Send video metadata as key=value pairs separated by pipes. Use \\| to escape pipe characters.</i>
-<b>Example:</b> <code>title={basename}|description=Encoded at {resolution}</code>
-┖ <b>Time Left :</b> <code>60 sec</code>""",
+        "🎥 Video Stream Metadata",
+        "Metadata applied to video streams.",
+        """<i>📹 Video stream metadata for visual tracks</i>
+
+<b>📋 Example:</b>
+<code>title={basename}|comment=HD Video</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "SUBTITLE_METADATA": (
-        "Subtitle Metadata String (key=value|key=value) with Dynamic Variables",
-        "Set subtitle stream metadata fields with dynamic variables. Applied per subtitle stream with {sublang} replaced by each stream's language.",
-        """<i>Send subtitle metadata as key=value pairs separated by pipes. Use \\| to escape pipe characters.</i>
-<b>Example:</b> <code>title={basename} - {sublang}|comment=Subtitle track</code>
-┖ <b>Time Left :</b> <code>60 sec</code>""",
+        "💬 Subtitle Stream Metadata",
+        "Metadata applied to each subtitle track separately.",
+        """<i>📄 Subtitle stream metadata with per-track language support</i>
+
+<b>📋 Example:</b>
+<code>language={sublang}|title=Subtitles - {sublang}</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "YT_DESP": (
         "String",
@@ -597,7 +614,9 @@ async def get_user_settings(from_user, stype="main"):
 """
 
     elif stype == "ffset":
-        buttons.data_button("FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS")
+        buttons.data_button(
+            "FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS", "header"
+        )
         if user_dict.get("FFMPEG_CMDS", False):
             ffc = user_dict["FFMPEG_CMDS"]
         elif "FFMPEG_CMDS" not in user_dict and Config.FFMPEG_CMDS:
@@ -625,7 +644,7 @@ async def get_user_settings(from_user, stype="main"):
             display_meta_val = (
                 f"<code>{escape(metadata_setting)}</code> [<i>Legacy, needs re-set</i>]"
             )
-        
+
         buttons.data_button("Audio Metadata", f"userset {user_id} menu AUDIO_METADATA")
         audio_meta_setting = user_dict.get("AUDIO_METADATA")
         display_audio_meta = "<b>Not Set</b>"
@@ -634,7 +653,7 @@ async def get_user_settings(from_user, stype="main"):
                 f"{k}={escape(str(v))}" for k, v in audio_meta_setting.items()
             )
             display_audio_meta = f"<code>{display_audio_meta}</code>"
-        
+
         buttons.data_button("Video Metadata", f"userset {user_id} menu VIDEO_METADATA")
         video_meta_setting = user_dict.get("VIDEO_METADATA")
         display_video_meta = "<b>Not Set</b>"
@@ -643,8 +662,10 @@ async def get_user_settings(from_user, stype="main"):
                 f"{k}={escape(str(v))}" for k, v in video_meta_setting.items()
             )
             display_video_meta = f"<code>{display_video_meta}</code>"
-        
-        buttons.data_button("Subtitle Metadata", f"userset {user_id} menu SUBTITLE_METADATA")
+
+        buttons.data_button(
+            "Subtitle Metadata", f"userset {user_id} menu SUBTITLE_METADATA"
+        )
         subtitle_meta_setting = user_dict.get("SUBTITLE_METADATA")
         display_subtitle_meta = "<b>Not Set</b>"
         if isinstance(subtitle_meta_setting, dict) and subtitle_meta_setting:
@@ -660,8 +681,9 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>FF Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┠ <b>FFmpeg Commands</b> → {ffc}
-┠ <b>Metadata</b> → {display_meta_val}
+┠ <b>FFmpeg CLI Commands</b> → {ffc}
+┃
+┠ <b>Default Metadata</b> → {display_meta_val}
 ┠ <b>Audio Metadata</b> → {display_audio_meta}
 ┠ <b>Video Metadata</b> → {display_video_meta}
 ┖ <b>Subtitle Metadata</b> → {display_subtitle_meta}"""
@@ -889,29 +911,34 @@ async def set_option(_, message, option, rfunc):
             )
             return
         value = value.lower()
-    elif option in ["METADATA", "AUDIO_METADATA", "VIDEO_METADATA", "SUBTITLE_METADATA"]:
+    elif option in [
+        "METADATA",
+        "AUDIO_METADATA",
+        "VIDEO_METADATA",
+        "SUBTITLE_METADATA",
+    ]:
         parsed_metadata_dict = {}
         if value and isinstance(value, str):
             if value.strip() == "":
                 value = {}
             else:
                 parts = []
-                current = ''
+                current = ""
                 i = 0
                 while i < len(value):
-                    if value[i] == '\\' and i + 1 < len(value) and value[i + 1] == '|':
-                        current += '|'
+                    if value[i] == "\\" and i + 1 < len(value) and value[i + 1] == "|":
+                        current += "|"
                         i += 2
-                    elif value[i] == '|':
+                    elif value[i] == "|":
                         parts.append(current)
-                        current = ''
+                        current = ""
                         i += 1
                     else:
                         current += value[i]
                         i += 1
                 if current:
                     parts.append(current)
-                
+
                 for part in parts:
                     if "=" in part:
                         key, val_str = part.split("=", 1)

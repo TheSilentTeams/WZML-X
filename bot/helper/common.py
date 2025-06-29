@@ -67,25 +67,14 @@ class TaskConfig:
         self.user_id = self.user.id
         self.user_dict = user_data.get(self.user_id, {})
         self.metadata_processor = MetadataProcessor()
-
-        default_metadata_from_settings = self.user_dict.get("METADATA")
-        if isinstance(default_metadata_from_settings, dict):
-            self.default_metadata_dict = default_metadata_from_settings
-        else:
-            self.default_metadata_dict = {}
-        
-        self.audio_metadata_dict = self.user_dict.get("AUDIO_METADATA", {})
-        if not isinstance(self.audio_metadata_dict, dict):
-            self.audio_metadata_dict = {}
-        
-        self.video_metadata_dict = self.user_dict.get("VIDEO_METADATA", {})
-        if not isinstance(self.video_metadata_dict, dict):
-            self.video_metadata_dict = {}
-        
-        self.subtitle_metadata_dict = self.user_dict.get("SUBTITLE_METADATA", {})
-        if not isinstance(self.subtitle_metadata_dict, dict):
-            self.subtitle_metadata_dict = {}
-
+        for k in ("METADATA", "AUDIO_METADATA", "VIDEO_METADATA", "SUBTITLE_METADATA"):
+            v = self.user_dict.get(k, {})
+            if isinstance(v, dict):
+                setattr(self, f"{k.lower()}_dict", v)
+            elif isinstance(v, str):
+                setattr(self, f"{k.lower()}_dict", self.metadata_processor.parse_string(v))
+            else:
+                setattr(self, f"{k.lower()}_dict", {})
         self.dir = f"{DOWNLOAD_DIR}{self.mid}"
         self.up_dir = ""
         self.link = ""
